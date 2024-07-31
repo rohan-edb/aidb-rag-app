@@ -1,4 +1,4 @@
-# importing all the required modules
+import os
 import PyPDF2
 from db import get_connection
 
@@ -6,12 +6,12 @@ def generate_embeddings():
     conn = get_connection()
     cursor = conn.cursor()
     
-    cursor.execute("""
+    cursor.execute(f"""
                     SELECT aidb.create_pg_retriever(
                         'documents_embeddings',
                         'public',
                         'id',
-                        'all-MiniLM-L6-v2',
+                        '{os.getenv("EMBEDDING_MODEL")}',
                         'text',
                         'documents',
                         ARRAY['id', 'doc_fragment'],
