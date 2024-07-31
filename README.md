@@ -1,5 +1,7 @@
 # aidb-rag
-An application to demonstrate how can you make a RAG using EDB's aidb and PostgreSQL
+An application to demonstrate how can you make a RAG using EDB's aidb and PostgreSQL.
+
+![Sample Chat Console Output](/imgs/chat%20console.png)
 
 ## Requirements
 - Python3
