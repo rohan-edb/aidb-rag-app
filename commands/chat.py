@@ -10,7 +10,7 @@ def chat(args, model, device, tokenizer):
         if question.lower() == "exit":
             break
 
-        answer = rag_query(tokenizer=tokenizer, model=model, device=device, query=question)
+        answer = rag_query(tokenizer=tokenizer, model=model, device=device, query=question, topk=5)
 
         print(f"You Asked: {question}")
         print(f"Answer: {answer}")

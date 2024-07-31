@@ -1,15 +1,25 @@
 # importing all the required modules
 import PyPDF2
-import torch
-from transformers import pipeline
+from db import get_connection
 
-def generate_embeddings(tokenizer, model, device, text):
-    inputs = tokenizer(
-        text, return_tensors="pt", truncation=True, max_length=512
-    ).to(device)
-    with torch.no_grad():
-        outputs = model(**inputs, output_hidden_states=True)
-    return text, outputs.hidden_states[-1].mean(dim=1).tolist()
+def generate_embeddings():
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+                    SELECT aidb.create_pg_retriever(
+                        'documents_embeddings',
+                        'public',
+                        'id',
+                        'all-MiniLM-L6-v2',
+                        'text',
+                        'documents',
+                        ARRAY['id', 'doc_fragment'],
+                    FALSE);""")
+    cursor.execute("""
+            SELECT aidb.refresh_retriever('documents_embeddings');""")
+    conn.commit()
+    return None
 
 
 def read_pdf_file(pdf_path):
