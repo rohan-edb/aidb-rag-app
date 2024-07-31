@@ -40,6 +40,8 @@ python app.py --help
 
 usage: app.py [-h] {create-db,import-data,chat} {data_source}
 
+e.g: python app.py import-data sample.pdf
+
 Application Description
 
 options:
