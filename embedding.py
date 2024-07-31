@@ -11,7 +11,7 @@ def generate_embeddings():
                         'documents_embeddings',
                         'public',
                         'id',
-                        '{os.getenv("EMBEDDING_MODEL")}',
+                        '{os.getenv("AIDB_MODEL_NAME")}',
                         'text',
                         'documents',
                         ARRAY['id', 'doc_fragment'],
