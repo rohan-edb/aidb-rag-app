@@ -50,32 +50,40 @@ def main():
 
     args = parser.parse_args()
 
-    if hasattr(args, "func"):
-        if torch.cuda.is_available():
-            device = "cuda"
-            bnb_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_use_double_quant=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype=torch.bfloat16
+    if args.command==Command.CHAT.value:
+        if hasattr(args, "func"):
+            if torch.cuda.is_available():
+                device = "cuda"
+                bnb_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_compute_dtype=torch.bfloat16
+                )
+                dtype = torch.float16
+            elif torch.backends.mps.is_available():
+                device = "mps"
+                bnb_config = None
+                dtype = torch.float16  # MPS supports float16å
+
+            else:
+                device = "cpu"
+                bnb_config = None
+            tokenizer = AutoTokenizer.from_pretrained(
+                os.getenv("TOKENIZER_NAME"),
+                token=os.getenv("HUGGING_FACE_ACCESS_TOKEN"),
             )
-        else:
-            device = "cpu"
-            bnb_config = None
-
-        tokenizer = AutoTokenizer.from_pretrained(
-            os.getenv("TOKENIZER_NAME"),
-            token=os.getenv("HUGGING_FACE_ACCESS_TOKEN"),
-        )
-        model = AutoModelForCausalLM.from_pretrained(
-            os.getenv("MODEL_NAME"),
-            token=os.getenv("HUGGING_FACE_ACCESS_TOKEN"),
-            quantization_config=bnb_config,
-            device_map=device,
-            torch_dtype=torch.float16,
-        )
-
-        args.func(args, model, device, tokenizer)
+            model = AutoModelForCausalLM.from_pretrained(
+                os.getenv("MODEL_NAME"),
+                token=os.getenv("HUGGING_FACE_ACCESS_TOKEN"),
+                quantization_config=bnb_config,
+                device_map=device,
+                torch_dtype=torch.float16,
+            )
+            
+            args.func(args, model, device, tokenizer)
+    elif ((args.command==Command.IMPORT_DATA.value) or (args.command==Command.CREATE_DB.value)):
+            args.func(args)
     else:
         print("Invalid command. Use '--help' for assistance.")
 

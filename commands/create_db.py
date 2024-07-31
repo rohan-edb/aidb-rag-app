@@ -2,7 +2,7 @@ import os
 import psycopg2
 
 
-def create_db(args, model, device, tokenizer):
+def create_db(args):
     db_config = {
         "user": os.getenv("DB_USER"),
         "password": os.getenv("DB_PASSWORD"),
@@ -32,12 +32,12 @@ def create_db(args, model, device, tokenizer):
     conn.autocommit = True
 
     cursor = conn.cursor()
-    cursor.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+    cursor.execute("CREATE EXTENSION IF NOT EXISTS aidb cascade;")
     cursor.close()
 
     cursor = conn.cursor()
     cursor.execute(
-        "CREATE TABLE IF NOT EXISTS embeddings (id serial PRIMARY KEY, doc_fragment text, embeddings vector(4096));"
+        "CREATE TABLE IF NOT EXISTS documents (id text PRIMARY KEY, doc_fragment text);"
     )
     cursor.close()
 

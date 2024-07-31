@@ -1,18 +1,20 @@
-# pgvector-rag
-An application to demonstrate how can you make a RAG using pgvector and PostgreSQL
+# aidb-rag
+An application to demonstrate how can you make a RAG using EDB's aidb and PostgreSQL.
+
+![Sample Chat Console Output](/imgs/chat%20console.png)
 
 ## Requirements
 - Python3
 - PostgreSQL
-- pgvector
+- aidb
 
 ## Install
 
 Clone the repository
 
 ```
-git clone git@github.com:gulcin/pgvector-rag.git
-cd pgvector-rag
+git clone git@github.com:gulcin/aidb-rag-app.git
+cd aidb-rag-app
 ```
 
 Install Dependencies
@@ -31,10 +33,16 @@ cp .env-example .env
 
 ## Run
 
+First run your `aidb` extension by following the step by step installation guide: https://www.enterprisedb.com/docs/edb-postgres-ai/ai-ml/install-tech-preview/
+
+Make sure your aidb extension is ready to accept connections. Then you can continue as follows:
+
 ```
 python app.py --help
 
-usage: app.py [-h] {create-db,import-data,chat} ...
+usage: app.py [-h] {create-db,import-data,chat} {data_source}
+
+e.g: python app.py import-data sample.pdf
 
 Application Description
 
@@ -48,35 +56,4 @@ Subcommands:
     import-data         Import data
     chat                Use chat feature
 ```
-
-## Run UI 
-
-We use Streamlit for creating a simple Graphical User Interface for our pgvector-rag app. 
-
-To be able to run Streamlit please do the following:
-
-```
-pip install streamlit
-```
-
-**Add keys/secrets to Streamlit secrets**
-
-If you need to store secrets that Streamlit app will use, you can do this by creating
-`.streamlit/secrets.toml` file under Streamlit directory and adding lines like following:
-
-```
-# .streamlit/secrets.toml
-OPENAI_API_KEY = "YOUR_API_KEY"
-```
-**Run Streamlit app for generating UI**
-
-```
-streamlit run chatgptui.py
-```
-You can create as many apps you'd like and place them under Streamlit directory,
-edit the keys if needed and run them like described above. 
-
-
-
-
 
