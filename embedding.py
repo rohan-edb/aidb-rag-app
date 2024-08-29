@@ -2,10 +2,9 @@ import os
 import PyPDF2
 from db import get_connection
 
-def generate_embeddings():
+def create_retriever():
     conn = get_connection()
     cursor = conn.cursor()
-    
     cursor.execute(f"""
                     SELECT aidb.create_pg_retriever(
                         'documents_embeddings',
@@ -14,10 +13,8 @@ def generate_embeddings():
                         '{os.getenv("AIDB_MODEL_NAME")}',
                         'text',
                         'documents',
-                        ARRAY['id', 'doc_fragment'],
-                    FALSE);""")
-    cursor.execute("""
-            SELECT aidb.refresh_retriever('documents_embeddings');""")
+                        ARRAY['filename', 'doc_fragment'],
+                        TRUE);""")
     conn.commit()
     return None
 

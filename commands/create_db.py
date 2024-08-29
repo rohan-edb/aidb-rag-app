@@ -29,6 +29,7 @@ def create_db(args):
     conn.close()
     db_config["dbname"] = os.getenv("DB_NAME")
     conn = psycopg2.connect(**db_config)
+    print("Connection is successful!")
     conn.autocommit = True
 
     cursor = conn.cursor()
@@ -37,7 +38,7 @@ def create_db(args):
 
     cursor = conn.cursor()
     cursor.execute(
-        "CREATE TABLE IF NOT EXISTS documents (id text PRIMARY KEY, doc_fragment text);"
+        "CREATE TABLE IF NOT EXISTS documents (id text PRIMARY KEY, filename text, doc_fragment text);"
     )
     cursor.close()
 
