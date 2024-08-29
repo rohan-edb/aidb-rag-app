@@ -21,7 +21,7 @@ class Command(Enum):
     IMPORT_DATA_PG = "import-data-pg"
     CHAT = "chat"
 
-# Streamlit UI
+
 def main():
     parser = argparse.ArgumentParser(description="Application Description")
 
@@ -107,6 +107,7 @@ def main():
             args.func(args, model, device, tokenizer)
     elif (
         (args.command == Command.IMPORT_DATA_S3.value)
+        or (args.command == Command.UPDATE_DATA_S3.value)
         or (args.command == Command.IMPORT_DATA_PG.value)
         or (args.command == Command.CREATE_DB.value)
     ):

@@ -41,7 +41,7 @@ def update_s3_data(args):
     s3_text_to_table(cursor, args.bucket_name)
     conn.commit()
     print(
-        "import-data-s3 command executed. S3 bucket name: {}".format(args.bucket_name)
+        "update-data-s3 command executed. S3 bucket name: {}".format(args.bucket_name)
     )
 
 def connect_to_s3():
