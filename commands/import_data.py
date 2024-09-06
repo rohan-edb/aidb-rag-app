@@ -118,14 +118,14 @@ def import_data_pg(args):
     for filename in os.listdir(args.data_dir):
         if filename not in existing_filenames:
             file_path = os.path.join(args.data_dir, filename)
-            print(file_path)
+            
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
                 file_content = file.read()
             
             soup = BeautifulSoup(file_content, 'html.parser')
             body_content = soup.body.get_text(separator="\n") if soup.body else ""
             body_content = re.sub(r'\s+', ' ', body_content).strip()
-            print(body_content[:10])
+            
             # Store each embedding in the database
             cursor.execute(
             "INSERT INTO documents (id, filename, doc_fragment) VALUES (%s, %s, %s)",
@@ -156,7 +156,7 @@ def import_data_pg_pdf(args):
     for filename in os.listdir(args.data_dir):
         if filename not in existing_filenames:
             file_path = os.path.join(args.data_dir, filename)
-            print(file_path)
+            
             start_index = pdf_to_table(cursor, file_path, filename, start_index)
     conn.commit()
 

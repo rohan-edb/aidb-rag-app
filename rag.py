@@ -13,7 +13,7 @@ Question: {question}
 Answer:
 """
 
-def get_retrieval_condition(query_embedding, topk):
+def get_retrieval_condition(query_embedding, topk, retriever_name):
     # Convert query embedding to a string format for SQL query
     query_embedding_str = ",".join(map(str, query_embedding))
 
@@ -21,17 +21,32 @@ def get_retrieval_condition(query_embedding, topk):
     # condition = f"(embeddings <=> '{query_embedding_str}') < {threshold} ORDER BY embeddings <=> '{query_embedding_str}'"
     conn = get_connection()
     cursor = conn.cursor()
+    
     cursor.execute(
-            f"""SELECT data from aidb.retrieve('{query_embedding_str}', {topk}, 'documents_embeddings');"""
+            f"""SELECT data_sources from aidb.retrievers where name='{retriever_name}';"""
         )
+    results = cursor.fetchone()
+    
+    # the output is text details for pg table whereas filename for s3 bucket
+    if results[0] is None:
+        cursor.execute(
+                f"""SELECT data from aidb.retrieve('{query_embedding_str}', {topk}, '{retriever_name}');"""
+            )
+
+    else:
+        cursor.execute(
+                f"""SELECT doc_fragment FROM documents WHERE filename IN (SELECT (replace(data, '''', '"')::jsonb)->>'text_id'  from aidb.retrieve('{query_embedding_str}', {topk}, '{retriever_name}'));"""
+            )
     results = cursor.fetchall()
     rag_query = ' '.join([row[0] for row in results])
+    
+
     return rag_query
 
 
-def rag_query(tokenizer, model, device, query, topk):
+def rag_query(tokenizer, model, device, query, topk, retriever_name):
     # Retrieve relevant embeddings from the database
-    rag_query = get_retrieval_condition(query, topk)
+    rag_query = get_retrieval_condition(query, topk, retriever_name)
     query_template = template.format(context=rag_query, question=query)
 
     input_ids = tokenizer.encode(query_template, return_tensors="pt")

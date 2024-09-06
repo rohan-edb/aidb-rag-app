@@ -44,18 +44,38 @@ with col2:
 
 st.title("RAG Application")
 
+# Set up the session state to hold chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
 def chat(args, model, device, tokenizer):
-    while True:
-        question = st.chat_input("Chat started. Type 'exit' to end the chat. Ask a question about the EDB blog authors:")
+    # Function to handle sending a message and querying the model
+    def send_message(user_input):
+        
+        if user_input.lower() == "exit":
+            st.stop()  # End the chat if "exit" is typed
 
-        if question.lower() == "exit":
-            break
+        # Append user's question to the chat history
+        st.session_state.messages.append({"role": "user", "content": user_input})
 
-        answer = rag_query(tokenizer=tokenizer, model=model, device=device, query=question, topk=5)
-    
-        with st.chat_message("Human"):
-          st.write(answer)
-        # print(f"You Asked: {question}")
-        # print(f"Answer: {answer}")
+        # Query the model for the answer
+        answer = rag_query(tokenizer=tokenizer, model=model, device=device, query=user_input, topk=5, retriever_name=args.retriever_name)
 
-    print("Chat ended.")
+        # Append model's answer to the chat history
+        st.session_state.messages.append({"role": "bot", "content": answer})
+
+        for message in st.session_state.messages:
+            if message["role"] == "user":
+                with st.chat_message("Human"):
+                    st.write(message["content"])
+            else:
+                with st.chat_message("Assistant"):
+                    st.write(message["content"])
+
+    # Chat input box with unique key
+    user_input = st.chat_input("Type your message here...")
+
+    # If the user submits a message, process it
+    if user_input:
+        send_message(user_input)
+

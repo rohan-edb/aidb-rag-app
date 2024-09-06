@@ -69,6 +69,7 @@ def main():
 
     # chat command
     chat_parser = subparsers.add_parser(Command.CHAT.value, help="Use chat feature")
+    chat_parser.add_argument("retriever_name", type=str, help="Specify the retriever name")
     chat_parser.set_defaults(func=chat)
 
     args = parser.parse_args()
