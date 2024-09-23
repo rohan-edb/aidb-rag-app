@@ -28,18 +28,16 @@ def get_retrieval_condition(query_embedding, topk, retriever_name):
     results = cursor.fetchone()
     
     # the output is text details for pg table whereas filename for s3 bucket
-    if results[0] is None:
+    if results[0] == "pg":
         cursor.execute(
                 f"""SELECT data from aidb.retrieve('{query_embedding_str}', {topk}, '{retriever_name}');"""
             )
-
     else:
         cursor.execute(
-                f"""SELECT doc_fragment FROM documents WHERE filename IN (SELECT (replace(data, '''', '"')::jsonb)->>'text_id'  from aidb.retrieve('{query_embedding_str}', {topk}, '{retriever_name}'));"""
+                f"""SELECT doc_fragment FROM documents WHERE filename IN (SELECT (replace(data, '''', '"')::jsonb)->>'text_id' from aidb.retrieve('{query_embedding_str}', {topk}, '{retriever_name}'));"""
             )
     results = cursor.fetchall()
     rag_query = ' '.join([row[0] for row in results])
-    
 
     return rag_query
 

@@ -10,36 +10,37 @@ from botocore.handlers import disable_signing
 
 def import_data_s3(args):
     conn = get_connection()
-    cursor = conn.cursor()
-    
-    conn.commit()
-    # Store each embedding in the database
-    cursor.execute(
-        f"""SELECT aidb.create_s3_retriever(
-            'html_file_embeddings', -- Name of the similarity retrieval setup
-            'public', -- Schema of the source table
-            '{os.getenv("AIDB_MODEL_NAME")}', -- Embeddings encoder model for retriever
-            'text',
-            '{args.bucket_name}',
-            '',
-            'http://s3.eu-central-1.amazonaws.com'
-            );"""
-    )
-    cursor.execute("""SELECT aidb.refresh_retriever('html_file_embeddings');""")
-    s3_text_to_table(cursor, args.bucket_name)
-    conn.commit()
+    with conn:
+        with conn.cursor() as curs:
+            # Configure s3 b
+            curs.execute(
+                f"""SELECT aidb.create_s3_retriever(
+                    'html_file_embeddings', -- Name of the similarity retrieval setup
+                    'public', -- Schema of the source table
+                    '{os.getenv("AIDB_MODEL_NAME")}', -- Embeddings encoder model for retriever
+                    'text',
+                    '{args.bucket_name}',
+                    '',
+                    'http://s3.eu-central-1.amazonaws.com'
+                    );"""
+            )
+            curs.execute("""SELECT aidb.refresh_retriever('html_file_embeddings');""")
+            s3_text_to_table(curs, args.bucket_name)
+        conn.commit()
+    conn.close()
     print(
         "import-data-s3 command executed. S3 bucket name: {}".format(args.bucket_name)
     )
 
 def update_s3_data(args):
     conn = get_connection()
-    cursor = conn.cursor()
+    with conn:
+        with conn.cursor() as curs:
+            # Store each embedding in the database
+            curs.execute(f"""SELECT aidb.refresh_retriever('{args.retriever_name}');""")
+            s3_text_to_table(curs, args.bucket_name)
     conn.commit()
-    # Store each embedding in the database
-    cursor.execute(f"""SELECT aidb.refresh_retriever('{args.retriever_name}');""")
-    s3_text_to_table(cursor, args.bucket_name)
-    conn.commit()
+    conn.close()
     print(
         "update-data-s3 command executed. S3 bucket name: {}".format(args.bucket_name)
     )
@@ -60,15 +61,15 @@ def count_rows(cursor):
     return cursor.fetchone()[0]
 
 
-def pdf_to_table(cursor, file_path, filename, start_index):
+def pdf_to_table(cursor, file_path, filename):
     # read pdf in fragments and insert to documents table
     data = read_pdf_file(file_path)
     # Store each embedding in the database
     
-    for i, doc_fragment in enumerate(data, start=start_index + 1):
+    for i, doc_fragment in enumerate(data):
         cursor.execute(
-            "INSERT INTO documents (id, filename, doc_fragment) VALUES (%s, %s, %s)",
-            (i, filename, doc_fragment),
+            "INSERT INTO documents (filename, doc_fragment) VALUES (%s, %s, %s) ON CONFLICT (filename)",
+            (filename, doc_fragment),
         )
     return i
 
@@ -90,10 +91,11 @@ def s3_text_to_table(cursor, bucket_name):
         body_content = soup.body.get_text(separator="\n") if soup.body else ""
         # Remove excessive whitespace but keep structure
         body_content = re.sub(r'\s+', ' ', body_content).strip()
+    
         cursor.execute(
-            """INSERT INTO documents (id, filename, doc_fragment) VALUES (%s, %s, %s) ON CONFLICT (id)
+            """INSERT INTO documents (filename, doc_fragment) VALUES (%s, %s) ON CONFLICT (filename)
             DO UPDATE SET doc_fragment = EXCLUDED.doc_fragment;""",
-            (i, filename, body_content),
+            (filename, body_content),
         )
         
     return None
@@ -101,67 +103,60 @@ def s3_text_to_table(cursor, bucket_name):
 
 def import_data_pg(args):
     conn = get_connection()
-    cursor = conn.cursor()
-    
-    # get already existing rows in documents table
-    cursor.execute("SELECT DISTINCT filename FROM documents;")
-    existing_filenames = {result[0] for result in cursor.fetchall()}
-
-    # List all files in the directory
-    start_index = count_rows(cursor)  # Get the current count of rows
-    # Flag to check if documents table was empty initially
-    was_empty = start_index == 0
-    if was_empty:
-        
-        create_retriever()
-     # Process the files in the directory
-    for filename in os.listdir(args.data_dir):
-        if filename not in existing_filenames:
-            file_path = os.path.join(args.data_dir, filename)
-            
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
-                file_content = file.read()
-            
-            soup = BeautifulSoup(file_content, 'html.parser')
-            body_content = soup.body.get_text(separator="\n") if soup.body else ""
-            body_content = re.sub(r'\s+', ' ', body_content).strip()
-            
-            # Store each embedding in the database
-            cursor.execute(
-            "INSERT INTO documents (id, filename, doc_fragment) VALUES (%s, %s, %s)",
-            (start_index, filename, body_content),
-        )
-            start_index +=1
+    with conn:
+        with conn.cursor() as curs:
+            # get already existing rows in documents table
+            curs.execute("SELECT DISTINCT filename FROM documents;")
+            existing_filenames = {result[0] for result in curs.fetchall()}
+            # no data is in documents
+            if count_rows(curs) == 0:
+                create_retriever()
+            # Process the files in the directory
+            for full_filename in os.listdir(args.data_dir):
+                filename, _ = os.path.splitext(full_filename)
+                if filename not in existing_filenames:
+                    file_path = os.path.join(args.data_dir, full_filename)
+                    
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
+                        file_content = file.read()
+                    
+                    soup = BeautifulSoup(file_content, 'html.parser')
+                    body_content = soup.body.get_text(separator="\n") if soup.body else ""
+                    body_content = re.sub(r'\s+', ' ', body_content).strip()
+                    
+                    # Store each embedding in the database
+                    curs.execute(
+                    """INSERT INTO documents (filename, doc_fragment) VALUES (%s, %s);""",
+                    (filename, body_content),
+                )
     conn.commit()
-
-    # Call create_retriever() if the documents table was empty initially
-    
-
+    conn.close()
     print("import-data-pg command executed. Data dir: {}".format(args.data_dir))
+    
 
 
 def import_data_pg_pdf(args):
     conn = get_connection()
-    cursor = conn.cursor()
-    
-    # get already existing rows in documents table
-    cursor.execute("SELECT DISTINCT filename FROM documents;")
-    existing_filenames = {result[0] for result in cursor.fetchall()}
+    with conn:
+        with conn.cursor() as curs:
+            # get already existing rows in documents table
+            curs.execute("SELECT DISTINCT filename FROM documents;")
+            existing_filenames = {result[0] for result in curs.fetchall()}
 
-    # List all files in the directory
-    start_index = count_rows(cursor)  # Get the current count of rows
-    # Flag to check if documents table was empty initially
-    was_empty = start_index == 0
-     # Process the files in the directory
-    for filename in os.listdir(args.data_dir):
-        if filename not in existing_filenames:
-            file_path = os.path.join(args.data_dir, filename)
-            
-            start_index = pdf_to_table(cursor, file_path, filename, start_index)
+            # List all files in the directory
+            start_index = count_rows(curs)  # Get the current count of rows
+            # Flag to check if documents table was empty initially
+            was_empty = start_index == 0
+            # Process the files in the directory
+            for full_filename in os.listdir(args.data_dir):
+                # remove extension
+                filename, _ = os.path.splitext(full_filename)
+                if filename not in existing_filenames:
+                    file_path = os.path.join(args.data_dir, full_filename)
+                    
+                    pdf_to_table(curs, file_path, filename)
     conn.commit()
-
     # Call create_retriever() if the documents table was empty initially
     if was_empty:
         create_retriever()
-
         print("import-data-pg command executed. Data dir: {}".format(args.data_dir))

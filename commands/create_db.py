@@ -38,8 +38,12 @@ def create_db(args):
 
     cursor = conn.cursor()
     cursor.execute(
-        "CREATE TABLE IF NOT EXISTS documents (id text PRIMARY KEY, filename text, doc_fragment text);"
+        """CREATE TABLE IF NOT EXISTS documents 
+        (id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY, 
+        filename text UNIQUE, 
+        doc_fragment text);"""
     )
+
     cursor.close()
 
     print("Database setup completed.")
