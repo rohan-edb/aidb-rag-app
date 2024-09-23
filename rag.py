@@ -13,9 +13,9 @@ Question: {question}
 Answer:
 """
 
-def get_retrieval_condition(query_embedding, topk, retriever_name):
-    # Convert query embedding to a string format for SQL query
-    query_embedding_str = ",".join(map(str, query_embedding))
+def get_retrieval_condition(query, topk, retriever_name):
+    # Transform query to a format that pgvector can recognize
+    query_str = ",".join(map(str, query))
 
     # # SQL condition for cosine similarity
     # condition = f"(embeddings <=> '{query_embedding_str}') < {threshold} ORDER BY embeddings <=> '{query_embedding_str}'"
@@ -30,11 +30,11 @@ def get_retrieval_condition(query_embedding, topk, retriever_name):
     # the output is text details for pg table whereas filename for s3 bucket
     if results[0] == "pg":
         cursor.execute(
-                f"""SELECT data from aidb.retrieve('{query_embedding_str}', {topk}, '{retriever_name}');"""
+                f"""SELECT data from aidb.retrieve('{query_str}', {topk}, '{retriever_name}');"""
             )
     else:
         cursor.execute(
-                f"""SELECT doc_fragment FROM documents WHERE filename IN (SELECT (replace(data, '''', '"')::jsonb)->>'text_id' from aidb.retrieve('{query_embedding_str}', {topk}, '{retriever_name}'));"""
+                f"""SELECT doc_fragment FROM documents WHERE filename IN (SELECT (replace(data, '''', '"')::jsonb)->>'text_id' from aidb.retrieve('{query_str}', {topk}, '{retriever_name}'));"""
             )
     results = cursor.fetchall()
     rag_query = ' '.join([row[0] for row in results])
