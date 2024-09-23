@@ -13,7 +13,7 @@ Question: {question}
 Answer:
 """
 
-def get_retrieval_condition(query, topk, retriever_name):
+def retrieve_augmentation(query, topk, retriever_name):
     # Transform query to a format that pgvector can recognize
     query_str = ",".join(map(str, query))
 
@@ -44,7 +44,7 @@ def get_retrieval_condition(query, topk, retriever_name):
 
 def rag_query(tokenizer, model, device, query, topk, retriever_name):
     # Retrieve relevant embeddings from the database
-    rag_query = get_retrieval_condition(query, topk, retriever_name)
+    rag_query = retrieve_augmentation(query, topk, retriever_name)
     query_template = template.format(context=rag_query, question=query)
 
     input_ids = tokenizer.encode(query_template, return_tensors="pt")
