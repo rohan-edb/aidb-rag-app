@@ -25,7 +25,6 @@ def import_data_s3(args):
                     );"""
             )
             curs.execute("""SELECT aidb.refresh_retriever('html_file_embeddings');""")
-            s3_text_to_table(curs, args.bucket_name)
         conn.commit()
     conn.close()
     print(
@@ -37,7 +36,7 @@ def update_s3_data(args):
     with conn:
         with conn.cursor() as curs:
             # Store each embedding in the database
-            curs.execute(f"""SELECT aidb.refresh_retriever('{args.retriever_name}');""")
+            # curs.execute(f"""SELECT aidb.refresh_retriever('{args.retriever_name}');""")
             s3_text_to_table(curs, args.bucket_name)
     conn.commit()
     conn.close()
@@ -100,7 +99,6 @@ def s3_text_to_table(cursor, bucket_name):
         
     return None
 
-
 def import_data_pg(args):
     conn = get_connection()
     with conn:
@@ -129,6 +127,7 @@ def import_data_pg(args):
                     """INSERT INTO documents (filename, doc_fragment) VALUES (%s, %s);""",
                     (filename, body_content),
                 )
+    
     conn.commit()
     conn.close()
     print("import-data-pg command executed. Data dir: {}".format(args.data_dir))

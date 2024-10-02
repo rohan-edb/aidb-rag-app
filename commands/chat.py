@@ -64,7 +64,7 @@ def chat(args, model, device, tokenizer):
         st.session_state.messages.append({"role": "user", "content": user_input})
 
         # Query the model for the answer
-        answer = rag_query(tokenizer=tokenizer, model=model, device=device, query=user_input, topk=10, retriever_name=args.retriever_name)
+        answer = rag_query(tokenizer=tokenizer, model=model, device=device, query=user_input, topk=5, retriever_name=args.retriever_name)
 
         # Append model's answer to the chat history
         st.session_state.messages.append({"role": "bot", "content": answer})
