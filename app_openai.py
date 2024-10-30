@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import os
 import torch
 
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from openai import OpenAI
 
 from commands.chat import chat
 from commands.create_db import create_db
@@ -76,36 +76,8 @@ def main():
 
     if args.command == Command.CHAT.value:
         if hasattr(args, "func"):
-            if torch.cuda.is_available():
-                device = "cuda"
-                bnb_config = BitsAndBytesConfig(
-                    load_in_4bit=True,
-                    bnb_4bit_use_double_quant=True,
-                    bnb_4bit_quant_type="nf4",
-                    bnb_4bit_compute_dtype=torch.bfloat16,
-                )
-                dtype = torch.float16
-            elif torch.backends.mps.is_available():
-                device = "mps"
-                bnb_config = None
-                dtype = torch.float16  # MPS supports float16å
-
-            else:
-                device = "cpu"
-                bnb_config = None
-            tokenizer = AutoTokenizer.from_pretrained(
-                os.getenv("TOKENIZER_NAME"),
-                token=os.getenv("HUGGING_FACE_ACCESS_TOKEN"),
-            )
-            model = AutoModelForCausalLM.from_pretrained(
-                os.getenv("MODEL_NAME"),
-                token=os.getenv("HUGGING_FACE_ACCESS_TOKEN"),
-                quantization_config=bnb_config,
-                device_map=device,
-                torch_dtype=torch.float16,
-            )
-
-            args.func(args, model, device, tokenizer)
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), project='proj_dr8uvmZW7V18Mm34hu6YBSsK')
+            args.func(args, model=os.getenv("OPENAI_MODEL_NAME"), device=None, tokenizer=client)
     elif (
         (args.command == Command.IMPORT_DATA_S3.value)
         or (args.command == Command.UPDATE_DATA_S3.value)

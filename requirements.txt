@@ -6,3 +6,6 @@ black
 PyPDF2
 bitsandbytes
 accelerate
+boto3
+beautifulsoup4
+streamlit
