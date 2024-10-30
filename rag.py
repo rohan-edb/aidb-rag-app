@@ -33,7 +33,7 @@ def retrieve_s3_data(file_names):
     return [f for name in file_names for f in bucket.objects.filter(Prefix=name)]
 
 def retrieve_augmentation(query, topk, retriever_name):
-    
+    # clean punctuations and extra spaces 
     query_str = ''.join(e for e in query if e.isalnum() or e.isspace())
     rag_query = ""
     with get_connection() as conn:
@@ -67,10 +67,24 @@ def retrieve_augmentation(query, topk, retriever_name):
     return rag_query
 
 def rag_query(tokenizer, model, device, query, topk, retriever_name):
+    client = tokenizer
     rag_query = retrieve_augmentation(query, topk, retriever_name)
     query_template = template.format(context=rag_query, question=query)
-    input_ids = tokenizer.encode(query_template, return_tensors="pt")
+    if model.startswith("gpt"):
+        completion = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {
+                "role": "user",
+                "content": query_template,
+            }
+        ]
+    )
+        return completion.choices[0].message.content
+    else:
+        input_ids = tokenizer.encode(query_template, return_tensors="pt")
 
-    model.generation_config.pad_token_id = tokenizer.pad_token_id
-    generated_response = model.generate(input_ids.to(device), max_new_tokens=100)
-    return tokenizer.decode(generated_response[0][input_ids.shape[-1]:], skip_special_tokens=True)
+        model.generation_config.pad_token_id = tokenizer.pad_token_id
+        generated_response = model.generate(input_ids.to(device), max_new_tokens=100)
+        return tokenizer.decode(generated_response[0][input_ids.shape[-1]:], skip_special_tokens=True)

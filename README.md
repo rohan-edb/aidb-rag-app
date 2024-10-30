@@ -39,25 +39,37 @@ cp .env-example .env
 
 First run your `aidb` extension by following the step by step installation guide: https://www.enterprisedb.com/docs/edb-postgres-ai/ai-ml/install-tech-preview/
 
-Make sure your aidb extension is ready to accept connections. Then you can continue as follows:
+Make sure your aidb extension is ready to accept connections. 
+
+Then running subcommands is divided into two phase. The first phase to prepare database and creating retriever and embeddings then next is using the chat functionality:
 
 ```
+# Initialization phase
 python app.py --help
 
-usage: app.py [-h] {create-db,import-data,chat} {data_source}
+usage: python app.py [-h] {create-db, import-data, import-data-s3, update-data-s3, chat} {data_source}
 
-e.g: python app.py import-data sample.pdf
+e.g: python app.py import-data-pg data/
 
+# Chat phase
+streamlit run app_x.py --help
+
+usage with HF Generative Models: streamlit run app.py chat {retriever_name}
+usage with OpenAI: streamlit run app_openai.py chat {retriever_name}
+```
+```
 Application Description
 
 options:
   -h, --help            show this help message and exit
 
 Subcommands:
-  {create-db,import-data,chat}
+  {create-db, import-data, import-data-s3, update-data-s3, chat}
                         Display available subcommands
     create-db           Create a database
-    import-data         Import data
+    import-data-pg      Use PG table as a source for aidb retriever
+    import-data-s3      Use S3 bucket as a source for aidb retriever
+    update-data-s3      Update embeddings using new data in S3 source
     chat                Use chat feature
 ```
 
