@@ -3,6 +3,8 @@ import ast
 import boto3
 import os
 from db import get_connection
+import openai
+import backoff
 from botocore.handlers import disable_signing
 
 template = """<s>[INST]
@@ -42,7 +44,9 @@ def retrieve_augmentation(query, topk, retriever_name):
                 f"SELECT data_sources FROM aidb.retrievers WHERE name=%s;", (retriever_name,)
             )
             results = cursor.fetchone()
-            if results[0] == "pg":
+            if results is None:
+                raise ValueError("Retriever not found")
+            elif results[0] == "pg":
                 cursor.execute(
                     f"SELECT data FROM aidb.retrieve(%s, %s, %s);", (query_str, topk, retriever_name)
                 )
@@ -66,13 +70,17 @@ def retrieve_augmentation(query, topk, retriever_name):
             conn.commit()
     return rag_query
 
+@backoff.on_exception(backoff.expo, openai.RateLimitError)
+def _api_call(openai_class, model, messages):
+    return openai_class.chat.completions.create(
+        model=model, messages=messages
+        )
+
 def rag_query(tokenizer, model, device, query, topk, retriever_name):
-    client = tokenizer
+    
     rag_query = retrieve_augmentation(query, topk, retriever_name)
     query_template = template.format(context=rag_query, question=query)
     if model.startswith("gpt"):
-        completion = client.chat.completions.create(
-        model=model,
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {
@@ -80,7 +88,7 @@ def rag_query(tokenizer, model, device, query, topk, retriever_name):
                 "content": query_template,
             }
         ]
-    )
+        completion = _api_call(openai_class=tokenizer,  model=model, messages=messages)
         return completion.choices[0].message.content
     else:
         input_ids = tokenizer.encode(query_template, return_tensors="pt")
