@@ -52,7 +52,7 @@ if "messages" not in st.session_state:
 st.session_state.messages.append({"role": "Assistant", "content": "Hello I'm a friendly bot that you can ask questions about authors in EDB blog."})
 with st.chat_message("Assistant"):
     st.write(st.session_state.messages[0]["content"])
-def chat(args, model, device, tokenizer):
+def chat(args, model_provider, model, device, tokenizer):
     # Function to handle sending a message and querying the model
     def send_message(user_input):
         
@@ -64,7 +64,7 @@ def chat(args, model, device, tokenizer):
         st.session_state.messages.append({"role": "user", "content": user_input})
 
         # Query the model for the answer
-        answer = rag_query(tokenizer=tokenizer, model=model, device=device, query=user_input, topk=5, retriever_name=args.retriever_name)
+        answer = rag_query(tokenizer=tokenizer, model_provider=model_provider, model=model, device=device, query=user_input, topk=5, retriever_name=args.retriever_name)
 
         # Append model's answer to the chat history
         st.session_state.messages.append({"role": "bot", "content": answer})

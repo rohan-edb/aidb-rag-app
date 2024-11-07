@@ -76,11 +76,11 @@ def _api_call(openai_class, model, messages):
         model=model, messages=messages
         )
 
-def rag_query(tokenizer, model, device, query, topk, retriever_name):
+def rag_query(tokenizer, model_provider, model, device, query, topk, retriever_name):
     
     rag_query = retrieve_augmentation(query, topk, retriever_name)
     query_template = template.format(context=rag_query, question=query)
-    if model.startswith("gpt"):
+    if model_provider == "openai":
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {
