@@ -85,11 +85,10 @@ def main():
                     bnb_4bit_compute_dtype=torch.bfloat16,
                 )
                 dtype = torch.float16
-            elif torch.backends.mps.is_available():
-                device = "mps"
-                bnb_config = None
-                dtype = torch.float16  # MPS supports float16å
-
+            # elif torch.backends.mps.is_available():
+            #     device = "mps"
+            #     bnb_config = None
+            #     dtype = torch.float16  # MPS supports float16
             else:
                 device = "cpu"
                 bnb_config = None
@@ -104,8 +103,8 @@ def main():
                 device_map=device,
                 torch_dtype=torch.float16,
             )
-
-            args.func(args, model, device, tokenizer)
+            model_provider = "huggingface"
+            args.func(args, model_provider, model, device, tokenizer)
     elif (
         (args.command == Command.IMPORT_DATA_S3.value)
         or (args.command == Command.UPDATE_DATA_S3.value)
