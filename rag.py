@@ -41,32 +41,20 @@ def retrieve_augmentation(query, topk, retriever_name):
     with get_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(
-                f"SELECT data_sources FROM aidb.retrievers WHERE name=%s;", (retriever_name,)
+                f"SELECT value FROM aidb.retrieve_text(%s, %s, %s);", (retriever_name, query_str, 1)
             )
-            results = cursor.fetchone()
-            if results is None:
-                raise ValueError("Retriever not found")
-            elif results[0] == "pg":
-                cursor.execute(
-                    f"SELECT data FROM aidb.retrieve(%s, %s, %s);", (query_str, topk, retriever_name)
-                )
-                rag_query = ' '.join(row[0] for row in cursor.fetchall())
-            else:
-                cursor.execute(
-                    f"SELECT data FROM aidb.retrieve(%s, %s, %s);", (query_str, topk, retriever_name)
-                )
-                topk_filename = []
-                for result in cursor.fetchall():
-                    try:
-                        data = json.loads(result[0])
-                    except json.JSONDecodeError:
-                        data = ast.literal_eval(result[0])
-                    topk_filename.append(data['text_id'])
-                file_list = retrieve_s3_data(topk_filename)
-                for file in file_list:
-                    file_context = file.get()["Body"].read()
-                    text_content = file_context.decode(encoding="utf-8", errors="ignore")
-                    rag_query += text_content
+            # topk_filename = []
+            for result in cursor.fetchall():
+            #     try:
+            #         data = json.loads(result[0])
+            #     except json.JSONDecodeError:
+            #         data = ast.literal_eval(result[0])
+            #     topk_filename.append(data['text_id'])
+            # file_list = retrieve_s3_data(topk_filename)
+            # for file in file_list:
+            #     file_context = file.get()["Body"].read()
+            #     text_content = file_context.decode(encoding="utf-8", errors="ignore")
+                rag_query += str(result[0])
             conn.commit()
     return rag_query
 

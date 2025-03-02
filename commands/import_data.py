@@ -107,8 +107,8 @@ def import_data_pg(args):
             curs.execute("SELECT DISTINCT filename FROM documents;")
             existing_filenames = {result[0] for result in curs.fetchall()}
             # no data is in documents
-            if count_rows(curs) == 0:
-                create_retriever()
+            # if count_rows(curs) == 0:
+            #     create_retriever()
             # Process the files in the directory
             for full_filename in os.listdir(args.data_dir):
                 filename, _ = os.path.splitext(full_filename)

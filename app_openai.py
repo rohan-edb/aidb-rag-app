@@ -76,7 +76,7 @@ def main():
 
     if args.command == Command.CHAT.value:
         if hasattr(args, "func"):
-            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), project='proj_dr8uvmZW7V18Mm34hu6YBSsK')
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), project='proj_JK0VzRTUalZXAREIyk1HoQUE')
             args.func(args, model_provider="openai", model=os.getenv("OPENAI_MODEL_NAME"), device=None, tokenizer=client)
     elif (
         (args.command == Command.IMPORT_DATA_S3.value)

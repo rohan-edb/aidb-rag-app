@@ -6,15 +6,13 @@ def create_retriever():
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(f"""
-                    SELECT aidb.create_pg_retriever(
-                        'documents_embeddings',
-                        'public',
-                        'id',
-                        '{os.getenv("AIDB_MODEL_NAME")}',
-                        'text',
-                        'documents',
-                        ARRAY['filename', 'doc_fragment'],
-                        TRUE);""")
+                    SELECT aidb.create_retriever_for_table(
+                        name => 'documents_embeddings',
+                        model_name => '{os.getenv("AIDB_MODEL_NAME")}',
+                        source_table => 'documents',
+                        source_data_column => 'doc_fragment',
+                        source_data_type => 'Text'
+                        );""")
     conn.commit()
     return None
 
